@@ -1,0 +1,17 @@
+# Example URLs file for XSS-Hunter
+# Add one URL per line
+# Lines starting with # are comments
+
+# Example dashboard pages
+https://example.com/dashboard
+https://example.com/profile
+https://example.com/settings
+
+# Example search/filter pages  
+https://example.com/search?q=test
+https://example.com/products?category=electronics
+
+# Example form pages
+https://example.com/contact
+https://example.com/feedback
+https://example.com/comment/new
