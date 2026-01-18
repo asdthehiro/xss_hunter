@@ -1,9 +1,9 @@
 # XSS-Hunter
 
-**Nickname:** dark_hunter  
+**Author:** dark_hunter  
 **Platform:** Kali Linux  
 **Language:** Python 3 
-**Author:** Poula
+
 
 
 ## Description
@@ -72,3 +72,4 @@ xss-hunter/
 ## License
 
 For educational and authorized security testing purposes only.
+developed by Eng: Poula
