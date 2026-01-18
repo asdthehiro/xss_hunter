@@ -2,8 +2,9 @@
 
 **Nickname:** dark_hunter  
 **Platform:** Kali Linux  
-**Language:** Python 3
-**Author** Poula
+**Language:** Python 3 
+
+**Author:** Poula
 
 
 ## Description
