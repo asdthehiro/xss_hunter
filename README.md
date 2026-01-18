@@ -72,4 +72,5 @@ xss-hunter/
 ## License
 
 For educational and authorized security testing purposes only.
+
 developed by Eng: Poula
