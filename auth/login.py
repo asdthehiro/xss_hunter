@@ -2,7 +2,9 @@
 Authentication Module - Handle login and session management with browser support
 """
 import os
+import shutil
 import time
+import platform
 from typing import Optional, Dict, Tuple
 
 import requests
@@ -59,6 +61,25 @@ class Authenticator:
         self.csrf_token = None
         self.csrf_field_name = 'csrf_token'
     
+    def _clear_bad_webdriver_cache(self):
+        """Clear webdriver-manager cache if it contains wrong architecture binaries"""
+        wdm_cache = os.path.expanduser("~/.wdm/drivers")
+        if os.path.exists(wdm_cache):
+            try:
+                # Check if we're on ARM64 but cache has x86_64 drivers
+                machine = platform.machine().lower()
+                if 'aarch64' in machine or 'arm64' in machine:
+                    # Look for linux64 (x86_64) drivers
+                    for driver_type in ['geckodriver', 'chromedriver']:
+                        wrong_arch_path = os.path.join(wdm_cache, driver_type, 'linux64')
+                        if os.path.exists(wrong_arch_path):
+                            self._log("warning", f"Detected wrong architecture drivers in {wrong_arch_path}")
+                            self._log("info", f"Clearing incompatible webdriver cache...")
+                            shutil.rmtree(wrong_arch_path)
+                            self._log("success", f"Removed {wrong_arch_path}")
+            except Exception as e:
+                self._log("warning", f"Could not clear webdriver cache: {e}")
+    
     def _log(self, level: str, message: str):
         """Internal logging helper"""
         if self.logger:
@@ -96,6 +117,15 @@ class Authenticator:
         self._log("info", "Please complete the login process in the browser window")
         self._log("info", "The browser will close automatically once you're logged in")
         
+        # Clear bad cached drivers on ARM64 systems
+        self._clear_bad_webdriver_cache()
+        
+        # Force ARM64 architecture for webdriver-manager if on ARM system
+        machine = platform.machine().lower()
+        if 'aarch64' in machine or 'arm64' in machine:
+            os.environ['WDM_ARCH'] = 'arm64'
+            self._log("info", "Detected ARM64 system, configuring webdriver-manager accordingly")
+        
         driver = None
         try:
             # Initialize WebDriver based on browser choice
@@ -117,10 +147,17 @@ class Authenticator:
                 except Exception as sys_err:
                     self._log("warning", f"System geckodriver failed: {sys_err}")
                     try:
+                        self._log("info", "Attempting to download ARM64 geckodriver via webdriver-manager...")
                         os.environ.setdefault("WDM_ARCH", "arm64")
                         service = FirefoxService(GeckoDriverManager().install())
                         driver = webdriver.Firefox(service=service, options=firefox_options)
                     except Exception as mgr_err:
+                        self._log("error", "Failed to start Firefox WebDriver")
+                        self._log("error", "Please install geckodriver manually:")
+                        self._log("error", "  wget https://github.com/mozilla/geckodriver/releases/download/v0.36.0/geckodriver-v0.36.0-linux-aarch64.tar.gz")
+                        self._log("error", "  tar -xzf geckodriver-v0.36.0-linux-aarch64.tar.gz")
+                        self._log("error", "  sudo mv geckodriver /usr/local/bin/")
+                        self._log("error", "  rm -rf ~/.wdm/drivers")
                         raise AuthenticationError(f"Unable to start Firefox WebDriver: {mgr_err}")
 
             elif self.browser_choice == "chrome":
@@ -143,10 +180,15 @@ class Authenticator:
                 except Exception as sys_err:
                     self._log("warning", f"System chromedriver failed: {sys_err}")
                     try:
+                        self._log("info", "Attempting to download ARM64 chromedriver via webdriver-manager...")
                         os.environ.setdefault("WDM_ARCH", "arm64")
                         service = ChromeService(ChromeDriverManager().install())
                         driver = webdriver.Chrome(service=service, options=chrome_options)
                     except Exception as mgr_err:
+                        self._log("error", "Failed to start Chrome WebDriver")
+                        self._log("error", "Please install chromedriver manually:")
+                        self._log("error", "  sudo apt update && sudo apt install -y chromium chromium-driver")
+                        self._log("error", "  rm -rf ~/.wdm/drivers")
                         raise AuthenticationError(f"Unable to start Chrome WebDriver: {mgr_err}")
             
             else:

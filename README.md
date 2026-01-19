@@ -56,14 +56,27 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
    - Install all dependencies
    - Display activation instructions
 
-3. **Activate the virtual environment**
+3. **Install WebDriver (Required for browser-based auth)**
+
+   **For ARM64/aarch64 systems (e.g., Kali on ARM, Apple Silicon):**
+   ```bash
+   chmod +x install_drivers_arm64.sh
+   ./install_drivers_arm64.sh
+   ```
+
+   **For x86_64 systems:**
+   - Firefox: `sudo apt install firefox-esr geckodriver` (or download from [Mozilla](https://github.com/mozilla/geckodriver/releases))
+   - Chrome: `sudo apt install chromium-driver` (or download from [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/))
+
+4. **Activate the virtual environment**
    ```bash
    source venv/bin/activate
    ```
 
-4. **Verify installation**
+5. **Verify installation**
    ```bash
    python3 main.py --help
+   geckodriver --version  # or chromedriver --version
    ```
 
 #### Manual Setup (Alternative)
