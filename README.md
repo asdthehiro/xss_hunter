@@ -35,7 +35,7 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/xss_hunter.git
+   git clone https://github.com/asdthehiro/xss_hunter.git
    cd xss_hunter
    ```
 
