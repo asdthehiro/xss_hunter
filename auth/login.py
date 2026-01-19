@@ -1,18 +1,20 @@
 """
 Authentication Module - Handle login and session management with browser support
 """
-import requests
-from typing import Optional, Dict, Tuple
-from bs4 import BeautifulSoup
+import os
 import time
+from typing import Optional, Dict, Tuple
+
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 
@@ -100,35 +102,52 @@ class Authenticator:
             if self.browser_choice == "firefox":
                 self._log("info", "Initializing Firefox WebDriver...")
                 firefox_options = FirefoxOptions()
-                # firefox_options.add_argument('--headless')  # Commented out to show browser
                 firefox_options.set_preference('dom.webdriver.enabled', False)
                 firefox_options.set_preference('useAutomationExtension', False)
-                
+
+                # Try system driver first (env override supported)
+                gecko_path = os.environ.get("GECKODRIVER_PATH")
                 try:
-                    service = FirefoxService(GeckoDriverManager().install())
-                    driver = webdriver.Firefox(service=service, options=firefox_options)
-                except Exception as e:
-                    self._log("warning", f"Failed to use webdriver-manager, trying system geckodriver: {e}")
-                    # Try system geckodriver
-                    driver = webdriver.Firefox(options=firefox_options)
-            
+                    if gecko_path:
+                        self._log("info", f"Using geckodriver at {gecko_path}")
+                        service = FirefoxService(executable_path=gecko_path)
+                        driver = webdriver.Firefox(service=service, options=firefox_options)
+                    else:
+                        driver = webdriver.Firefox(options=firefox_options)
+                except Exception as sys_err:
+                    self._log("warning", f"System geckodriver failed: {sys_err}")
+                    try:
+                        os.environ.setdefault("WDM_ARCH", "arm64")
+                        service = FirefoxService(GeckoDriverManager().install())
+                        driver = webdriver.Firefox(service=service, options=firefox_options)
+                    except Exception as mgr_err:
+                        raise AuthenticationError(f"Unable to start Firefox WebDriver: {mgr_err}")
+
             elif self.browser_choice == "chrome":
                 self._log("info", "Initializing Chrome WebDriver...")
                 chrome_options = ChromeOptions()
-                # chrome_options.add_argument('--headless')  # Commented out to show browser
                 chrome_options.add_argument('--no-sandbox')
                 chrome_options.add_argument('--disable-dev-shm-usage')
                 chrome_options.add_argument('--disable-blink-features=AutomationControlled')
                 chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
                 chrome_options.add_experimental_option('useAutomationExtension', False)
-                
+
+                chrome_path = os.environ.get("CHROMEDRIVER_PATH")
                 try:
-                    service = ChromeService(ChromeDriverManager().install())
-                    driver = webdriver.Chrome(service=service, options=chrome_options)
-                except Exception as e:
-                    self._log("warning", f"Failed to use webdriver-manager, trying system chromedriver: {e}")
-                    # Try system chromedriver
-                    driver = webdriver.Chrome(options=chrome_options)
+                    if chrome_path:
+                        self._log("info", f"Using chromedriver at {chrome_path}")
+                        service = ChromeService(executable_path=chrome_path)
+                        driver = webdriver.Chrome(service=service, options=chrome_options)
+                    else:
+                        driver = webdriver.Chrome(options=chrome_options)
+                except Exception as sys_err:
+                    self._log("warning", f"System chromedriver failed: {sys_err}")
+                    try:
+                        os.environ.setdefault("WDM_ARCH", "arm64")
+                        service = ChromeService(ChromeDriverManager().install())
+                        driver = webdriver.Chrome(service=service, options=chrome_options)
+                    except Exception as mgr_err:
+                        raise AuthenticationError(f"Unable to start Chrome WebDriver: {mgr_err}")
             
             else:
                 raise AuthenticationError(f"Unsupported browser: {self.browser_choice}")
