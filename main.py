@@ -143,6 +143,16 @@ def get_user_input() -> dict:
     
     username = ""
     password = ""
+    browser_choice = "firefox"  # Default for Kali Linux
+    
+    # Browser selection for browser-based auth
+    if use_browser:
+        print("\n[*] Select Browser:")
+        print("    1. Firefox (Default for Kali Linux)")
+        print("    2. Chrome/Chromium")
+        
+        browser_input = input("\nSelect browser (1 or 2) [1]: ").strip() or "1"
+        browser_choice = "firefox" if browser_input == "1" else "chrome"
     
     # Only ask for credentials if using automated method
     if not use_browser:
@@ -154,7 +164,8 @@ def get_user_input() -> dict:
         'login_url': login_url,
         'username': username,
         'password': password,
-        'use_browser': use_browser
+        'use_browser': use_browser,
+        'browser_choice': browser_choice
     }
 
 
@@ -209,7 +220,8 @@ def main():
             password=user_input['password'],
             base_url=user_input['base_url'],
             logger=logger,
-            use_browser=user_input['use_browser']
+            use_browser=user_input['use_browser'],
+            browser_choice=user_input['browser_choice']
         )
         
         session = authenticator.authenticate()

@@ -13,6 +13,7 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
 ## Features
 
 - ✅ **Browser-based authentication** - Manual login support for complex flows
+- ✅ **Firefox & Chrome support** - Choose your preferred browser (Firefox default for Kali)
 - ✅ **Multi-step login support** - Handles email-first, password-second flows
 - ✅ **OTP/2FA compatible** - Complete verification in browser
 - ✅ **Session capture** - Automatically transfers cookies to scanner
@@ -33,7 +34,7 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
 - Python 3.8 or higher
 - pip3
 - git
-- Google Chrome or Chromium browser
+- Firefox (pre-installed on Kali Linux) or Chrome/Chromium
 - Linux/Unix-based system (Tested on Kali Linux)
 
 ### Installation Steps
@@ -127,7 +128,8 @@ The tool will prompt you for:
 - Login URL
 - **Authentication method selection:**
   - **Option 1 (Recommended):** Browser-based manual login
-    - Opens Chrome browser
+    - Select Firefox (default for Kali) or Chrome
+    - Opens your chosen browser
     - You manually complete the login (including OTP, 2FA, multi-step)
     - Session cookies are automatically captured
     - Works with complex authentication flows
@@ -147,8 +149,12 @@ Perfect for:
 - Social login redirects
 - Complex JavaScript-based login forms
 
+**Supported Browsers:**
+- **Firefox** - Default for Kali Linux, pre-installed, most reliable
+- **Chrome/Chromium** - Alternative option
+
 **How it works:**
-1. Tool opens Chrome browser
+1. Tool opens Firefox (or Chrome if selected)
 2. You manually log in as you normally would
 3. Complete any verification (OTP, 2FA, etc.)
 4. Press Enter when logged in

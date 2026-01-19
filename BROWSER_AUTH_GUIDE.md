@@ -49,13 +49,25 @@ Login URL (press Enter to use base URL + /login): https://app.launchdarkly.com/l
 Select authentication method (1 or 2) [1]: 1
 ```
 
-### 4. Browser Opens Automatically
+### 4. Select Browser
 
-- Chrome browser will launch
+```
+[*] Select Browser:
+    1. Firefox (Default for Kali Linux)
+    2. Chrome/Chromium
+
+Select browser (1 or 2) [1]: 1
+```
+
+**Recommendation:** Use Firefox (option 1) on Kali Linux - it's pre-installed and most reliable.
+
+### 5. Browser Opens Automatically
+
+- Firefox (or Chrome) will launch
 - You'll see the login page
 - Log in as you normally would
 
-### 5. Complete Your Login
+### 6. Complete Your Login
 
 - Enter email/username
 - Enter password
@@ -63,7 +75,7 @@ Select authentication method (1 or 2) [1]: 1
 - Solve any CAPTCHA
 - Complete any verification steps
 
-### 6. Confirm Authentication
+### 7. Confirm Authentication
 
 When you're successfully logged in:
 
@@ -131,16 +143,36 @@ Login URL: https://accounts.google.com
 
 ### Browser doesn't open
 
-**Solution:**
+**On Kali Linux:**
+```bash
+# Firefox should be pre-installed
+firefox --version
+
+# If not, install it:
+sudo apt update
+sudo apt install firefox-esr
+```
+
+**For Chrome users:**
 ```bash
 # Install Chrome/Chromium
 sudo apt update
 sudo apt install chromium-browser
 
-# Or install Google Chrome
+# Or Google Chrome
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome-stable_current_amd64.deb
+sudo apt --fix-broken install
 ```
+
+### ChromeDriver "Exec format error" on Kali
+
+**Solution:** Use Firefox instead!
+```
+Select browser (1 or 2) [1]: 1
+```
+
+Firefox is the default browser on Kali and works more reliably.
 
 ### WebDriver error
 

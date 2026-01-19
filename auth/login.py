@@ -6,12 +6,15 @@ from typing import Optional, Dict, Tuple
 from bs4 import BeautifulSoup
 import time
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
 
 from utils.csrf import extract_csrf_token, extract_csrf_from_form
 from utils.forms import parse_forms, is_login_form, has_logout_indicator
@@ -26,7 +29,8 @@ class Authenticator:
     """Handles authentication and session management with browser support"""
     
     def __init__(self, login_url: str, username: str = "", password: str = "", 
-                 base_url: str = "", logger=None, use_browser: bool = True):
+                 base_url: str = "", logger=None, use_browser: bool = True, 
+                 browser_choice: str = "firefox"):
         """
         Initialize authenticator
         
@@ -37,6 +41,7 @@ class Authenticator:
             base_url: Base URL of the target application
             logger: Logger instance for output
             use_browser: Whether to use browser-based manual login
+            browser_choice: Browser to use ('firefox', 'chrome')
         """
         self.login_url = login_url
         self.username = username
@@ -44,6 +49,7 @@ class Authenticator:
         self.base_url = base_url or login_url
         self.logger = logger
         self.use_browser = use_browser
+        self.browser_choice = browser_choice.lower()
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -90,19 +96,42 @@ class Authenticator:
         
         driver = None
         try:
-            # Setup Chrome options
-            chrome_options = Options()
-            # chrome_options.add_argument('--headless')  # Commented out to show browser
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-            chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
-            chrome_options.add_experimental_option('useAutomationExtension', False)
+            # Initialize WebDriver based on browser choice
+            if self.browser_choice == "firefox":
+                self._log("info", "Initializing Firefox WebDriver...")
+                firefox_options = FirefoxOptions()
+                # firefox_options.add_argument('--headless')  # Commented out to show browser
+                firefox_options.set_preference('dom.webdriver.enabled', False)
+                firefox_options.set_preference('useAutomationExtension', False)
+                
+                try:
+                    service = FirefoxService(GeckoDriverManager().install())
+                    driver = webdriver.Firefox(service=service, options=firefox_options)
+                except Exception as e:
+                    self._log("warning", f"Failed to use webdriver-manager, trying system geckodriver: {e}")
+                    # Try system geckodriver
+                    driver = webdriver.Firefox(options=firefox_options)
             
-            # Initialize WebDriver
-            self._log("info", "Initializing Chrome WebDriver...")
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            elif self.browser_choice == "chrome":
+                self._log("info", "Initializing Chrome WebDriver...")
+                chrome_options = ChromeOptions()
+                # chrome_options.add_argument('--headless')  # Commented out to show browser
+                chrome_options.add_argument('--no-sandbox')
+                chrome_options.add_argument('--disable-dev-shm-usage')
+                chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+                chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
+                chrome_options.add_experimental_option('useAutomationExtension', False)
+                
+                try:
+                    service = ChromeService(ChromeDriverManager().install())
+                    driver = webdriver.Chrome(service=service, options=chrome_options)
+                except Exception as e:
+                    self._log("warning", f"Failed to use webdriver-manager, trying system chromedriver: {e}")
+                    # Try system chromedriver
+                    driver = webdriver.Chrome(options=chrome_options)
+            
+            else:
+                raise AuthenticationError(f"Unsupported browser: {self.browser_choice}")
             
             # Navigate to login page
             self._log("info", f"Navigating to: {self.login_url}")
