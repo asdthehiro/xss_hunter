@@ -45,30 +45,71 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
    ./setup.sh
    ```
 
-   Or manually install dependencies:
+   The setup script will automatically:
+   - Create a Python virtual environment
+   - Install all dependencies
+   - Display activation instructions
+
+3. **Activate the virtual environment**
    ```bash
-   pip3 install -r requirements.txt
+   source venv/bin/activate
    ```
 
-3. **Verify installation**
+4. **Verify installation**
    ```bash
    python3 main.py --help
    ```
 
-## Quick Start
+#### Manual Setup (Alternative)
 
-Run the interactive quickstart guide:
+If you prefer to set up manually:
+
 ```bash
-python3 quickstart.py
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-This will walk you through:
-- Authentication setup
-- Target URL configuration
-- Basic scanning options
-- Output configuration
+#### Deactivating Virtual Environment
+
+When finished, deactivate the environment:
+```bash
+deactivate
+```
+
+## Quick Start
+
+1. **Activate the virtual environment** (if not already active):
+   ```bash
+   source venv/bin/activate
+   ```
+
+2. **Run the interactive quickstart guide**:
+   ```bash
+   python3 quickstart.py
+   ```
+
+   This will walk you through:
+   - Authentication setup
+   - Target URL configuration
+   - Basic scanning options
+   - Output configuration
 
 ## Usage
+
+### Activate Virtual Environment
+
+Before running any commands, activate the virtual environment:
+```bash
+source venv/bin/activate
+```
+
+You'll see `(venv)` prefix in your terminal when activated.
 
 ### Basic Usage
 
