@@ -12,6 +12,10 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
 
 ## Features
 
+- ✅ **Browser-based authentication** - Manual login support for complex flows
+- ✅ **Multi-step login support** - Handles email-first, password-second flows
+- ✅ **OTP/2FA compatible** - Complete verification in browser
+- ✅ **Session capture** - Automatically transfers cookies to scanner
 - ✅ Authenticated session handling
 - ✅ CSRF token extraction and bypass
 - ✅ GET & POST parameter testing
@@ -29,6 +33,7 @@ Professional-grade authenticated XSS scanning tool designed to detect vulnerabil
 - Python 3.8 or higher
 - pip3
 - git
+- Google Chrome or Chromium browser
 - Linux/Unix-based system (Tested on Kali Linux)
 
 ### Installation Steps
@@ -119,9 +124,48 @@ python3 main.py
 
 The tool will prompt you for:
 - Target URL
-- Login credentials
-- Username/email field name
-- Password field name
+- Login URL
+- **Authentication method selection:**
+  - **Option 1 (Recommended):** Browser-based manual login
+    - Opens Chrome browser
+    - You manually complete the login (including OTP, 2FA, multi-step)
+    - Session cookies are automatically captured
+    - Works with complex authentication flows
+  - **Option 2:** Automated login (simple forms only)
+    - Requires username and password
+    - Only works with basic login forms
+    - May fail with complex authentication
+
+### Authentication Methods
+
+#### Browser-Based Login (Recommended)
+
+Perfect for:
+- Multi-step authentication (email first, then password)
+- OTP/2FA verification
+- CAPTCHA challenges
+- Social login redirects
+- Complex JavaScript-based login forms
+
+**How it works:**
+1. Tool opens Chrome browser
+2. You manually log in as you normally would
+3. Complete any verification (OTP, 2FA, etc.)
+4. Press Enter when logged in
+5. Tool captures your session automatically
+
+#### Automated Login
+
+Only use for:
+- Simple username/password forms
+- No JavaScript validation
+- No multi-step process
+- No OTP/2FA
+
+**Limitations:**
+- Cannot handle OTP/2FA
+- May fail with single-page applications
+- Cannot handle CAPTCHA
 
 ### Advanced Usage
 

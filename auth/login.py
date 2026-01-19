@@ -1,10 +1,17 @@
 """
-Authentication Module - Handle login and session management
+Authentication Module - Handle login and session management with browser support
 """
 import requests
 from typing import Optional, Dict, Tuple
 from bs4 import BeautifulSoup
 import time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 from utils.csrf import extract_csrf_token, extract_csrf_from_form
 from utils.forms import parse_forms, is_login_form, has_logout_indicator
@@ -16,25 +23,27 @@ class AuthenticationError(Exception):
 
 
 class Authenticator:
-    """Handles authentication and session management"""
+    """Handles authentication and session management with browser support"""
     
-    def __init__(self, login_url: str, username: str, password: str, 
-                 base_url: str, logger=None):
+    def __init__(self, login_url: str, username: str = "", password: str = "", 
+                 base_url: str = "", logger=None, use_browser: bool = True):
         """
         Initialize authenticator
         
         Args:
             login_url: URL of the login page
-            username: Username for authentication
-            password: Password for authentication
+            username: Username for authentication (optional for browser mode)
+            password: Password for authentication (optional for browser mode)
             base_url: Base URL of the target application
             logger: Logger instance for output
+            use_browser: Whether to use browser-based manual login
         """
         self.login_url = login_url
         self.username = username
         self.password = password
-        self.base_url = base_url
+        self.base_url = base_url or login_url
         self.logger = logger
+        self.use_browser = use_browser
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -57,6 +66,7 @@ class Authenticator:
     def authenticate(self) -> requests.Session:
         """
         Perform authentication and return authenticated session
+        Uses browser-based manual login for complex authentication flows
         
         Returns:
             Authenticated requests.Session object
@@ -64,7 +74,117 @@ class Authenticator:
         Raises:
             AuthenticationError: If authentication fails
         """
-        self._log("info", f"Attempting authentication at {self.login_url}")
+        if self.use_browser:
+            return self._browser_authenticate()
+        else:
+            return self._automated_authenticate()
+    
+    def _browser_authenticate(self) -> requests.Session:
+        """
+        Open browser for manual login and capture session cookies
+        Handles complex authentication: multi-step, OTP, 2FA, etc.
+        """
+        self._log("info", "Opening browser for manual authentication...")
+        self._log("info", "Please complete the login process in the browser window")
+        self._log("info", "The browser will close automatically once you're logged in")
+        
+        driver = None
+        try:
+            # Setup Chrome options
+            chrome_options = Options()
+            # chrome_options.add_argument('--headless')  # Commented out to show browser
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+            
+            # Initialize WebDriver
+            self._log("info", "Initializing Chrome WebDriver...")
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # Navigate to login page
+            self._log("info", f"Navigating to: {self.login_url}")
+            driver.get(self.login_url)
+            
+            # Wait for user to complete login
+            self._log("info", "Waiting for you to complete login...")
+            self._log("warning", "Press Enter here after you've successfully logged in")
+            
+            # Monitor for successful authentication
+            authenticated = False
+            start_time = time.time()
+            timeout = 300  # 5 minutes timeout
+            
+            while not authenticated and (time.time() - start_time) < timeout:
+                try:
+                    # Check if URL changed from login page
+                    current_url = driver.current_url.lower()
+                    
+                    # Check for authentication indicators
+                    if 'login' not in current_url or self._check_browser_auth(driver):
+                        # Prompt user to confirm
+                        user_input = input("\n[?] Have you successfully logged in? (Press Enter to continue, 'n' to wait): ").strip().lower()
+                        
+                        if user_input != 'n':
+                            authenticated = True
+                            break
+                    
+                    time.sleep(1)
+                except Exception as e:
+                    time.sleep(1)
+            
+            if not authenticated:
+                raise AuthenticationError("Authentication timeout - please try again")
+            
+            # Extract cookies from browser
+            self._log("info", "Extracting session cookies from browser...")
+            cookies = driver.get_cookies()
+            
+            # Transfer cookies to requests session
+            for cookie in cookies:
+                self.session.cookies.set(
+                    cookie['name'],
+                    cookie['value'],
+                    domain=cookie.get('domain', ''),
+                    path=cookie.get('path', '/')
+                )
+            
+            # Verify session
+            self._log("info", "Verifying captured session...")
+            test_response = self.session.get(driver.current_url, timeout=10)
+            
+            if test_response.status_code == 200:
+                self._log("success", f"Session captured successfully! {len(cookies)} cookies transferred")
+                return self.session
+            else:
+                raise AuthenticationError(f"Session verification failed (Status: {test_response.status_code})")
+        
+        except Exception as e:
+            raise AuthenticationError(f"Browser authentication failed: {str(e)}")
+        
+        finally:
+            if driver:
+                self._log("info", "Closing browser...")
+                driver.quit()
+    
+    def _check_browser_auth(self, driver) -> bool:
+        """Check if browser shows authentication indicators"""
+        try:
+            page_source = driver.page_source.lower()
+            return any(indicator in page_source for indicator in [
+                'logout', 'sign out', 'dashboard', 'profile', 'account'
+            ])
+        except:
+            return False
+    
+    def _automated_authenticate(self) -> requests.Session:
+        """
+        Automated authentication (legacy method)
+        Use browser-based authentication for complex flows
+        """
+        self._log("info", f"Attempting automated authentication at {self.login_url}")
         
         try:
             # Step 1: Get login page to extract CSRF token and cookies

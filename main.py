@@ -133,15 +133,28 @@ def get_user_input() -> dict:
             break
         print("[-] Invalid URL format. Please try again.")
     
-    # Credentials
-    username = input("Username: ").strip()
-    password = getpass.getpass("Password: ")
+    # Ask about authentication method
+    print("\n[*] Authentication Method:")
+    print("    1. Browser-based manual login (Recommended for complex flows, OTP, 2FA)")
+    print("    2. Automated login (Simple username/password forms only)")
+    
+    auth_choice = input("\nSelect authentication method (1 or 2) [1]: ").strip() or "1"
+    use_browser = auth_choice == "1"
+    
+    username = ""
+    password = ""
+    
+    # Only ask for credentials if using automated method
+    if not use_browser:
+        username = input("Username: ").strip()
+        password = getpass.getpass("Password: ")
      
     return {
         'base_url': base_url,
         'login_url': login_url,
         'username': username,
-        'password': password
+        'password': password,
+        'use_browser': use_browser
     }
 
 
@@ -195,7 +208,8 @@ def main():
             username=user_input['username'],
             password=user_input['password'],
             base_url=user_input['base_url'],
-            logger=logger
+            logger=logger,
+            use_browser=user_input['use_browser']
         )
         
         session = authenticator.authenticate()
