@@ -73,4 +73,4 @@ xss-hunter/
 
 For educational and authorized security testing purposes only.
 
-developed by Eng: Poula
+developed with love by Eng:Poula
